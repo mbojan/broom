@@ -779,3 +779,68 @@ glance.survdiff <- function(x, ...) {
     rval$p.value <- 1 - stats::pchisq(rval$statistic, rval$df)
     rval
 }
+
+
+
+
+#' Tidiers for Tests of Proportional Hazards Assumption
+#' 
+#' @param x a "survdiff" object
+#' @param global logical, whether to include the global test in the last row
+#' @param ... other arguments passed to/from other methods, currently ignored
+#'   
+#' @seealso \code{\link[survival]{cox.zph}}
+#'   
+#' @template boilerplate
+#'   
+#' @name cox.zph_tidiers
+#' 
+#' @examples
+#' if( require("survival") ) {
+#'      # from `help("cox.zph")`
+#'      fit <- coxph(Surv(futime, fustat) ~ age + ecog.ps,
+#'          data=ovarian)
+#'      zph <- cox.zph(fit)
+#'      tidy(zph)
+#' }
+NULL
+
+#' @rdname cox.zph_tidiers
+#' 
+#' @return \code{tidy} on "cox.zph" objects returns a data frame with the following columns:
+#' \item{term}{model term}
+#' \item{rho}{correlation between transformed survival time and the scaled Schoenfeld residuals}
+#' \item{statistic}{Chi-square test}
+#' \item{p.value}{two-sided p-value}
+#' If \code{global} is \code{TRUE} (default) last row if contains the global 
+#' test (\code{term} is equal to \code{"GLOBAL"} and \code{rho} is \code{NA}).
+#' If \code{global} is \code{FALSE} then this row is dropped.
+#' 
+#' @export
+tidy.cox.zph <- function(x, global=TRUE, ...) {
+    nr <- nrow(x$table)
+    rval <- data.frame(
+        rownames(x$table),
+        unrowname(x$table),
+        stringsAsFactors = FALSE
+    )
+    names(rval) <- c("term", "rho", "statistic", "p.value")
+    if(global) {
+        return(rval)
+    } else {
+        return(rval[-nr,])
+    }
+}
+
+
+#' @rdname cox.zph_tidiers
+#' 
+#' @return \code{glance} returns a data frame with the following columns:
+#' \item{statistic}{Chi-square test}
+#' \item{p.value}{p-value}.
+#' 
+#' @export
+glance.cox.zph <- function(x, ...) {
+    td <- tidy(x, global=TRUE)
+    unrowname( td[nrow(td), c("statistic", "p.value")] )
+}
